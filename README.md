@@ -4,18 +4,17 @@ Reproducer for the `openshift-pipelines/console-plugin` issue:
 **PipelineRun topology shows a task as failed when a stale same-name TaskRun from a previous
 PipelineRun is still in Tekton Results** (see linked Jira issue).
 
-![bug evidence](docs/bug-evidence.png)
+![bug evidence](docs/bug-evidence-v1.24.3.png)
 *`repro-task` node: red "!" (`pf-m-danger`) + `0/1`, although the current TaskRun is Succeeded (exit 0).*
 
-## Versions tested (bug present in both)
+## Versions tested
 
 | operator (CSV) | Tekton Pipelines | console-plugin image (digest) | result |
 |---|---|---|---|
-| 1.23.4 | v1.12.3 | `pipelines-console-plugin-pf5-rhel9@f36637b4…` | **bug PRESENT** (`docs/bug-evidence.png`) |
-| 1.24.3 | v1.15.5 | `pipelines-console-plugin-pf5-rhel9@33cb80d0…` | **bug PRESENT** (`docs/bug-evidence-v1.24.3.png`) |
+| 1.24.3 (latest) | v1.15.5 | `pipelines-console-plugin-pf5-rhel9@33cb80d0…` | **bug PRESENT** (`docs/bug-evidence-v1.24.3.png`) |
 
-On 1.24.3 the node shows the same wrong state: `pf-m-danger` + `0/1` while the K8s TaskRun
-is `True Succeeded`. The issue is still unfixed in the topology view: on `release-v1.24.x`
+The node shows the wrong state: `pf-m-danger` + `0/1` while the K8s TaskRun is
+`True Succeeded`. The issue is unfixed in the topology view: on `release-v1.24.x`
 (and `main`, `release-v1.25.x`) `PipelineRunVisualization.tsx` still calls
 `useTaskRuns(ns, name, undefined, undefined, …)`, i.e. `pipelineRunUid` is **not** passed,
 so the Results query is not narrowed to the current run's UID and the stale failed record
@@ -89,5 +88,4 @@ can't be reproduced again in that namespace until a new same-name cycle is creat
 | `run1-fail/` | PipelineRun `repro-run` with `exit-code=1` (the run to delete) |
 | `run2-succeed/` | PipelineRun `repro-run` (same name) with `exit-code=0` (the run to inspect) |
 | `kustomization.yaml` | root — just `base` (namespace + pipeline), for `oc apply -k .` |
-| `docs/bug-evidence.png` | console screenshot from the verified reproduction |
-| `docs/bug-evidence-v1.24.3.png` | same bug on operator 1.24.3 |
+| `docs/bug-evidence-v1.24.3.png` | console screenshot from the verified reproduction (operator 1.24.3) |
