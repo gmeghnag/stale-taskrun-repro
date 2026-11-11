@@ -2,7 +2,10 @@
 
 Reproducer for the `openshift-pipelines/console-plugin` issue:
 **PipelineRun topology shows a task as failed when a stale same-name TaskRun from a previous
-PipelineRun is still in Tekton Results** (see Jira SRVKP-XXXX / linked issue).
+PipelineRun is still in Tekton Results** (see linked Jira issue).
+
+![bug evidence](docs/bug-evidence.png)
+*`repro-task` node: red "!" (`pf-m-danger`) + `0/1`, although the current TaskRun is Succeeded (exit 0).*
 
 ## Prerequisites
 - OpenShift Pipelines installed (tested with operator 1.23.4 / Tekton Pipelines v1.12.3)
@@ -14,7 +17,7 @@ PipelineRun is still in Tekton Results** (see Jira SRVKP-XXXX / linked issue).
 
 ```sh
 # 0. clone
-git clone <this-repo> && cd stale-taskrun-repro
+git clone https://github.com/gmeghnag/stale-taskrun-repro && cd stale-taskrun-repro
 
 # 1. run #1: task FAILS (exit 1), then delete the PipelineRun
 oc apply -k run1-fail
@@ -26,20 +29,22 @@ oc apply -k run2-succeed
 oc wait --for=condition=Succeeded=True pipelinerun/repro-run -n repro-stale-taskrun --timeout=5m
 
 # 3. open the console:
-#    devops->repro-stale-taskrun -> PipelineRuns -> repro-run -> Overview
+#    repro-stale-taskrun -> Pipelines -> Pipeline Runs -> repro-run -> Overview
 #    => the "repro-task" node shows a RED "!" (pf-m-danger) and "0/1",
 #       although the TaskRun succeeded
 ```
 
-Verify the API ground truth (both agree the current run is fine):
+Verify the API ground truth (the current run is fine):
 
 ```sh
-oc get taskrun repro-run-repro-task -n repro-stale-taskrun -o jsonpath='{.status.conditions[?(@.type=="Succeeded")].{status,reason}}'
+oc get taskrun repro-run-repro-task -n repro-stale-taskrun \
+  -o jsonpath='{.status.conditions[0].status} {.status.conditions[0].reason}{"\n"}'
 # True Succeeded
-
-# the stale failed record is still in Tekton Results (filter by the old run UID):
-oc get pipelinerun repro-run -n repro-stale-taskrun -o jsonpath='{.metadata.uid}'
 ```
+
+Note: the failing run's failure reason does not matter (`StepFailed`/`PodCreationFailed`
+both work) — what matters is that run #1 fails, gets deleted, and leaves its TaskRun record
+in Tekton Results, while run #2 reuses the same name and succeeds.
 
 ## Why it happens (short)
 The console plugin fetches the run's TaskRuns from the K8s API **and** from the Tekton
@@ -59,8 +64,8 @@ Relevant code: `pipelineRuns-details/PipelineRunVisualization.tsx` (does not pas
 oc delete namespace repro-stale-taskrun
 ```
 
-(Optionally also purge the stale records from Tekton Results if you want the cluster fully
-clean; the bug will simply not be reproducible in that namespace afterwards.)
+(Optionally also purge the stale records from Tekton Results; otherwise the bug simply
+can't be reproduced again in that namespace until a new same-name cycle is created.)
 
 ## Layout
 
@@ -69,4 +74,5 @@ clean; the bug will simply not be reproducible in that namespace afterwards.)
 | `base/` | namespace `repro-stale-taskrun` + minimal `Pipeline` (one task, exit code via param) |
 | `run1-fail/` | PipelineRun `repro-run` with `exit-code=1` (the run to delete) |
 | `run2-succeed/` | PipelineRun `repro-run` (same name) with `exit-code=0` (the run to inspect) |
-| `kustomization.yaml` | root — just `base`, for `oc apply -k .` (namespace + pipeline only) |
+| `kustomization.yaml` | root — just `base` (namespace + pipeline), for `oc apply -k .` |
+| `docs/bug-evidence.png` | console screenshot from the verified reproduction |
