@@ -14,14 +14,12 @@ PipelineRun is still in Tekton Results** (see linked Jira issue).
 | 1.23.4 | v1.12.3 | `pipelines-console-plugin-pf5-rhel9@f36637b4…` | **bug PRESENT** (`docs/bug-evidence.png`) |
 | 1.24.3 | v1.15.5 | `pipelines-console-plugin-pf5-rhel9@33cb80d0…` | **bug PRESENT** (`docs/bug-evidence-v1.24.3.png`) |
 
-The 1.24.3 screenshot is byte-identical to the 1.23.4 one (same MD5) — the bug renders
-deterministically the same way, i.e. the fix has **not** landed in the topology by 1.24.3.
-Verified on the 1.24.3 pod via the live node state (React fiber): `pf-m-danger`, `0/1`,
-model `status=Failed` carrying the **stale** run's timestamps — while the K8s TaskRun is
-`True Succeeded`. The code confirms it: on `release-v1.24.x` (and `main`, `release-v1.25.x`)
-`PipelineRunVisualization.tsx` still calls `useTaskRuns(ns, name, undefined, undefined, …)`,
-i.e. `pipelineRunUid` is **not** passed, so the Results query is not narrowed to the current
-run's UID and the stale failed record wins.
+On 1.24.3 the node shows the same wrong state: `pf-m-danger` + `0/1` while the K8s TaskRun
+is `True Succeeded`. The issue is still unfixed in the topology view: on `release-v1.24.x`
+(and `main`, `release-v1.25.x`) `PipelineRunVisualization.tsx` still calls
+`useTaskRuns(ns, name, undefined, undefined, …)`, i.e. `pipelineRunUid` is **not** passed,
+so the Results query is not narrowed to the current run's UID and the stale failed record
+wins.
 
 ## Prerequisites
 - OpenShift Pipelines installed (tested with operator 1.23.4 / Tekton Pipelines v1.12.3
@@ -93,4 +91,4 @@ can't be reproduced again in that namespace until a new same-name cycle is creat
 | `run2-succeed/` | PipelineRun `repro-run` (same name) with `exit-code=0` (the run to inspect) |
 | `kustomization.yaml` | root — just `base` (namespace + pipeline), for `oc apply -k .` |
 | `docs/bug-evidence.png` | console screenshot from the verified reproduction (operator 1.23.4) |
-| `docs/bug-evidence-v1.24.3.png` | same bug on operator 1.24.3 (byte-identical render) |
+| `docs/bug-evidence-v1.24.3.png` | same bug on operator 1.24.3 |
