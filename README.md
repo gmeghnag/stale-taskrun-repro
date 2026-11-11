@@ -22,8 +22,7 @@ so the Results query is not narrowed to the current run's UID and the stale fail
 wins.
 
 ## Prerequisites
-- OpenShift Pipelines installed (tested with operator 1.23.4 / Tekton Pipelines v1.12.3
-  **and** 1.24.3 / Tekton Pipelines v1.15.5 — bug present in both)
+- OpenShift Pipelines installed (see *Versions tested* above)
 - **Tekton Results enabled** (`tekton-results-api` deployment present in `openshift-pipelines`)
 - a user with permission to create namespaces + tekton resources
 - cluster reachable with `oc`
@@ -90,5 +89,5 @@ can't be reproduced again in that namespace until a new same-name cycle is creat
 | `run1-fail/` | PipelineRun `repro-run` with `exit-code=1` (the run to delete) |
 | `run2-succeed/` | PipelineRun `repro-run` (same name) with `exit-code=0` (the run to inspect) |
 | `kustomization.yaml` | root — just `base` (namespace + pipeline), for `oc apply -k .` |
-| `docs/bug-evidence.png` | console screenshot from the verified reproduction (operator 1.23.4) |
+| `docs/bug-evidence.png` | console screenshot from the verified reproduction |
 | `docs/bug-evidence-v1.24.3.png` | same bug on operator 1.24.3 |
