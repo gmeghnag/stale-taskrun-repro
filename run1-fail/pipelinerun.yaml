@@ -1,0 +1,11 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: repro-run
+  namespace: repro-stale-taskrun
+spec:
+  pipelineRef:
+    name: repro-pipeline
+  params:
+    - name: exit-code
+      value: "1"

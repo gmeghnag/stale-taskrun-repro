@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: repro-pipeline
+  namespace: repro-stale-taskrun
+spec:
+  params:
+    - name: exit-code
+      type: string
+  tasks:
+    - name: repro-task
+      params:
+        - name: exit-code
+          value: $(params.exit-code)
+      taskSpec:
+        params:
+          - name: exit-code
+            type: string
+        steps:
+          - name: step
+            image: docker.io/library/alpine:3.20
+            script: |
+              #!/bin/sh
+              echo "exiting with: $(params.exit-code)"
+              exit $(params.exit-code)
