@@ -71,6 +71,23 @@ Relevant code: `pipelineRuns-details/PipelineRunVisualization.tsx` (does not pas
 `pipelineRunUid`), `hooks/useTaskRuns.ts` (`uniqBy(..., metadata.uid)`),
 `utils/pipeline-utils.ts` (`appendPipelineRunStatus` → `_.find` by task label).
 
+## Verification of the fix
+
+The same reproducer was re-run from scratch with the fixed console plugin: run #1 fails,
+its PipelineRun is deleted, then run #2 with the same name (`repro-run`, UID
+`eb827fe6-4f27-477c-8db6-a04c475ea4e9`) succeeds. On the PipelineRun Overview page the
+cluster now reports the current run:
+
+![overview after fix](docs/fix-verification/overview-after-fix.png)
+*Page status `Succeeded`, `repro-task` step badge `1/1`.*
+
+In the topology the stale failed node is gone: `.pf-m-danger` = 0, `.pf-m-success` = 2
+(pipeline + task), and the plugin's Tekton Results query for the topology now carries the
+`tekton.dev/pipelineRunUID` label filter, so only TaskRuns of the current run are merged.
+
+![topology after fix](docs/fix-verification/topology-after-fix.png)
+*Topology: no `pf-m-danger` node, two `pf-m-success` nodes.*
+
 ## Cleanup
 
 ```sh
@@ -89,3 +106,5 @@ can't be reproduced again in that namespace until a new same-name cycle is creat
 | `run2-succeed/` | PipelineRun `repro-run` (same name) with `exit-code=0` (the run to inspect) |
 | `kustomization.yaml` | root — just `base` (namespace + pipeline), for `oc apply -k .` |
 | `docs/bug-evidence-v1.24.3.png` | console screenshot from the verified reproduction (operator 1.24.3) |
+| `docs/fix-verification/overview-after-fix.png` | PipelineRun Overview after the fix: status `Succeeded`, step badge `1/1` |
+| `docs/fix-verification/topology-after-fix.png` | topology after the fix: `.pf-m-danger` = 0, `.pf-m-success` = 2 |
